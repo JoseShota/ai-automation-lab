@@ -1,0 +1,67 @@
+# Local automation lab: n8n + PostgreSQL (+ optional Ollama).
+#
+# Usage:
+#   cp .env.example .env        # then edit the values in .env
+#   docker compose up -d        # n8n at http://localhost:5678
+#   docker compose --profile local-ai up -d   # also start Ollama
+#   docker compose down         # stop (data is kept in volumes)
+#
+# Ports are bound to 127.0.0.1 so nothing is exposed to your local network.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    # Pin a specific version (e.g. n8nio/n8n:1.x.y) once your workflows are stable.
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      GENERIC_TIMEZONE: ${TIMEZONE}
+      TZ: ${TIMEZONE}
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_RUNNERS_ENABLED: "true"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      # Shared folder for exporting/importing workflow JSON files to this repo.
+      - ./workflows:/home/node/workflows
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ollama:
+    # Optional local LLMs. Start with: docker compose --profile local-ai up -d
+    image: ollama/ollama:latest
+    profiles: ["local-ai"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  postgres_data:
+  n8n_data:
+  ollama_data:

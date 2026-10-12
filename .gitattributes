@@ -1,0 +1,6 @@
+# Keep Unix line endings in the repo (the laptop runs Windows).
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary

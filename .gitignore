@@ -1,0 +1,34 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+dist/
+.next/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Data: only public or synthetic data is committed (see data/README.md)
+data/private/
+data/raw/
+*.sqlite
+*.db
+
+# Logs
+*.log
